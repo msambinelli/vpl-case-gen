@@ -5,7 +5,7 @@
 #
 # Date: 2020-02-22
 #
-# This program  generate test case files for the moodle vpl plugin
+# This program  generates test case files for the moodle vpl plugin
 
 import sys
 import os
