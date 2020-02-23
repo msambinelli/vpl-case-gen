@@ -16,18 +16,13 @@ def check_valid_file(fpath):
 
 	if not os.path.exists(fpath):
 		raise Exception("error: {} is not a valid file".format(fpath))
-
 	return fpath
 
 def output_stream(fpath):
 
 	return open(fpath, "w")
 
-def next_case_single(file):
-
-	return "".join(file.readlines())
-
-def next_case_mult(file):
+def next_case(file):
 
 	case = ""
 	while True:
@@ -51,15 +46,6 @@ def create_parser():
 	                     nargs="+",
 	                     type=check_valid_file,
 	                     help='Files with the input cases.')
-
-	parser.add_argument('-s',
-	                    '--single',
-	                    dest="next_case",
-	                    action='store_const',
-	                    const=next_case_single,
-	                    default=next_case_mult,
-	                    help='If this option is enable, the program will assume that each input file contains only one input case. ' +
-	                         'The default behavior is assume that each file contains several input cases separated by a line containing the following mark: <<<>>>')
 
 	parser.add_argument('--interpreter',
 	                     action='store',
@@ -118,7 +104,7 @@ if __name__ == "__main__":
 	for fpath in args.infiles:
 		with open(fpath) as file:
 			while True:
-				case = args.next_case(file)
+				case = next_case(file)
 				if case == "":
 					break  # reached EOF
 				output = run_case(cmd_exec, case)
