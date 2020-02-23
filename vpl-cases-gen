@@ -1,0 +1,127 @@
+#!/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Author: Maycon Sambinelli <m.sambinelli@ufabc.edu.br>
+#
+# Date: 2020-02-22
+#
+# This program  generate test case files for the moodle vpl plugin
+
+import sys
+import os
+import argparse
+import subprocess
+
+def check_valid_file(fpath):
+
+	if not os.path.exists(fpath):
+		raise Exception("error: {} is not a valid file".format(fpath))
+
+	return fpath
+
+def output_stream(fpath):
+
+	return open(fpath, "w")
+
+def next_case_single(file):
+
+	return "".join(file.readlines())
+
+def next_case_mult(file):
+
+	case = ""
+	while True:
+		l = file.readline()
+		if l.strip() == "<<<>>>" or  l ==  "":
+			return case
+		else:
+			case += l
+	return case
+
+def create_parser():
+
+	parser = argparse.ArgumentParser(description='Generator of test cases files for the Moodle VPL plugin.')
+
+	parser.add_argument('prog',
+	                     metavar='program',
+	                     help='The program that are going to process the input cases to generate the outputs.')
+
+	parser.add_argument('infiles',
+	                     metavar='filepath',
+	                     nargs="+",
+	                     type=check_valid_file,
+	                     help='Files with the input cases.')
+
+	parser.add_argument('-s',
+	                    '--single',
+	                    dest="next_case",
+	                    action='store_const',
+	                    const=next_case_single,
+	                    default=next_case_mult,
+	                    help='If this option is enable, the program will assume that each input file contains only one input case. ' +
+	                         'The default behavior is assume that each file contains several input cases separated by a line containing the following mark: <<<>>>')
+
+	parser.add_argument('--interpreter',
+	                     action='store',
+	                     help='If necessary,  you can use this option to specify an interpreter to run program.')
+
+	parser.add_argument('-o',
+	                    "--output",
+	                    metavar="filepath",
+	                    dest='output',
+	                    nargs=1,
+	                    action="store",
+	                    type=output_stream,
+	                    default=sys.stdout,
+	                    help="Specify an output file to write the generate cases (default: write to the stdout).")
+
+	return parser
+
+def run_case(cmd_exec, incase):
+
+	proc = subprocess.Popen(cmd_exec,
+                        stdin = subprocess.PIPE,
+                        stdout = subprocess.PIPE,
+                        stderr = subprocess.PIPE)
+
+	try:
+		outs, errs = proc.communicate(input=bytes(incase, encoding="utf8"),
+		                              timeout=15)
+		proc.check_returncode()
+	except TimeoutExpired:
+		proc.kill()
+		outs, errs = proc.communicate()
+	finally:
+		return outs.decode()
+
+def create_modle_case_str(number, instr, outstr):
+
+	return ("case=Caso {}\n" +
+	       "grade reduction = 100%\n" +
+	       "input={}\n" +
+	       "output={}").format(number, instr, outstr)
+
+def create_cmd_exec(args):
+
+	if args.interpreter:
+		return [args.interpreter, args.prog]
+	else:
+		return [args.prog]
+
+
+if __name__ == "__main__":
+	parser = create_parser()
+	args = parser.parse_args()
+
+	cmd_exec = create_cmd_exec(args)
+	ncase = 1
+	for fpath in args.infiles:
+		with open(fpath) as file:
+			while True:
+				case = args.next_case(file)
+				if case == "":
+					break  # reached EOF
+				output = run_case(cmd_exec, case)
+				case_str = create_modle_case_str(ncase, case, output)
+				args.output.write(case_str)
+				ncase += 1
