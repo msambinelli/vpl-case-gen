@@ -1,6 +1,6 @@
 # VPL-CASES-GEN
 
-
+This script generates *.cases files for the Moodle VPL plugin.  
 
 ## Usage
 
