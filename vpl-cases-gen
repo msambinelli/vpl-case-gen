@@ -55,7 +55,6 @@ def create_parser():
                         "--output",
                         metavar="filepath",
                         dest='output',
-                        nargs=1,
                         action="store",
                         type=output_stream,
                         default=sys.stdout,
