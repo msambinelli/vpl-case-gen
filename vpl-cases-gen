@@ -12,30 +12,35 @@ import os
 import argparse
 import subprocess
 
+
 def check_valid_file(fpath):
 
     if not os.path.exists(fpath):
         raise Exception("error: {} is not a valid file".format(fpath))
     return fpath
 
+
 def output_stream(fpath):
 
     return open(fpath, "w")
+
 
 def next_case(file):
 
     case = ""
     while True:
         l = file.readline()
-        if l.strip() == "<<<>>>" or  l ==  "":
+        if l.strip() == "<<<>>>" or l == "":
             return case
         else:
             case += l
     return case
 
+
 def create_parser():
 
-    parser = argparse.ArgumentParser(description='Generator of test cases files for the Moodle VPL plugin.')
+    parser = argparse.ArgumentParser(
+        description='Generator of test cases files for the Moodle VPL plugin.')
 
     parser.add_argument('prog',
                         metavar='program',
@@ -48,8 +53,8 @@ def create_parser():
                         help='Files with the input cases.')
 
     parser.add_argument('--interpreter',
-                         action='store',
-                         help='If necessary,  you can use this option to specify an interpreter to run program.')
+                        action='store',
+                        help='If necessary,  you can use this option to specify an interpreter to run program.')
 
     parser.add_argument('-o',
                         "--output",
@@ -60,14 +65,25 @@ def create_parser():
                         default=sys.stdout,
                         help="Specify an output file to write the generate cases (default: write to the stdout).")
 
+    parser.add_argument('--blind',
+                        action="store_true",
+                        help='If set make blind test cases.')
+
+    parser.add_argument('--start-case',
+                        action="store",
+                        default=1,
+                        type=int,
+                        help='Start numbering test cases from this number.')
+
     return parser
+
 
 def run_case(cmd_exec, incase):
 
     proc = subprocess.Popen(cmd_exec,
-                        stdin = subprocess.PIPE,
-                        stdout = subprocess.PIPE,
-                        stderr = subprocess.PIPE)
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
 
     try:
         outs, errs = proc.communicate(input=bytes(incase, encoding="utf8"),
@@ -79,12 +95,18 @@ def run_case(cmd_exec, incase):
     finally:
         return outs.decode()
 
-def create_modle_case_str(number, instr, outstr):
 
-    return ("case=Caso {}\n" +
-            "grade reduction = 100%\n" +
-            "input={}\n" +
-            "output={}").format(number, instr, outstr)
+def create_modle_case_str(number, instr, outstr, args):
+
+    outputstr = "case=Caso {}\n"
+    outputstr += "grade reduction = 100%\n"
+    if args.blind:
+        outputstr += "hide input output=True\n"
+    outputstr += "input={}\n"
+    outputstr += "output={}"
+
+    return (outputstr.format(number, instr, outstr))
+
 
 def create_cmd_exec(args):
 
@@ -99,7 +121,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     cmd_exec = create_cmd_exec(args)
-    ncase = 1
+    ncase = args.start_case
     for fpath in args.infiles:
         with open(fpath) as file:
             while True:
@@ -107,6 +129,6 @@ if __name__ == "__main__":
                 if case == "":
                     break  # reached EOF
                 output = run_case(cmd_exec, case)
-                case_str = create_modle_case_str(ncase, case, output)
+                case_str = create_modle_case_str(ncase, case, output, args)
                 args.output.write(case_str)
                 ncase += 1
