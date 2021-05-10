@@ -67,3 +67,10 @@ If the program require an interpreter to run properly (maybe because the program
 ./vpl-cases-gen --interpreter julia program.jl input01.in input02.in
 ```
 
+## Workflow
+
+Some time ago, I recorded this video (in Portuguese) for a group of friends
+explaining how I use the script. The video is very amateurish, but I think it
+can be useful, so I decided to make it available here.
+
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/PAYGwEJyjfU/0.jpg)](https://youtu.be/PAYGwEJyjfU)
